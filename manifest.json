@@ -1,0 +1,16 @@
+{
+    "display_name": "Yeocam Grid",
+    "id": "585fbaad-bece-4d01-a024-6a22df10db32",
+    "version": "0.1.0",
+    "authors": ["Yeocam Grid contributors"],
+    "name": "yeocam-grid",
+    "description": "Tile one camera source into a configurable grid.",
+    "long_description": "Yeocam Grid renders a single video source once per frame on the GPU and draws it N times in a grid, with crop anchors, zoom, mirroring, hotkeys and obs-websocket vendor requests.",
+    "urls": {
+        "repository": "https://example.com",
+        "website": "https://example.com",
+        "support": "https://example.com"
+    },
+    "has_banner": false,
+    "has_icon": false
+}
