@@ -8,6 +8,8 @@
 !/data
 !/src
 !/tests
+!/docs
+!/examples
 !.clang-format
 !.gersemirc
 !.gitignore

@@ -1,0 +1,10 @@
+{
+  "solo": { "count": 1, "columns": 0, "rows": 0, "gap": 0, "mirror": 0 },
+  "duo": { "count": 2, "columns": 2, "rows": 0, "gap": 16, "mirror": 0 },
+  "trio": { "count": 3, "columns": 3, "rows": 0, "gap": 16, "mirror": 0 },
+  "quad": { "count": 4, "columns": 2, "rows": 0, "gap": 16, "mirror": 0 },
+  "wall": { "count": 9, "columns": 3, "rows": 0, "gap": 8, "mirror": 0 },
+  "strip": { "count": 5, "columns": 0, "rows": 1, "gap": 8, "mirror": 0 },
+  "mirror-duo": { "count": 2, "columns": 2, "rows": 0, "gap": 0, "mirror": 2 },
+  "party": { "count": 16, "columns": 4, "rows": 0, "gap": 4, "mirror": 2 }
+}
