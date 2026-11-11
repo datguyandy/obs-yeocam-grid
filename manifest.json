@@ -1,7 +1,7 @@
 {
     "display_name": "Yeocam Grid",
     "id": "585fbaad-bece-4d01-a024-6a22df10db32",
-    "version": "0.2.1",
+    "version": "0.2.2",
     "authors": ["Yeocam Grid contributors"],
     "name": "yeocam-grid",
     "description": "Tile one camera source into a configurable grid.",
