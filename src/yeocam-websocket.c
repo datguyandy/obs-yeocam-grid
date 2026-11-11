@@ -29,6 +29,13 @@ with this program. If not, see <https://www.gnu.org/licenses/>
  *   ToggleFit    { sourceName? }             -> { fit: "fill" | "fit" }
  *   SetAnchor    { sourceName?, anchor }     -> { anchor }   anchor: "top_left" ... "bottom_right", "custom"
  *   NextAnchor   { sourceName? }             -> { anchor }
+ *   NextLayout   { sourceName? }             -> {}   step the layout sequence
+ *   ResetLayout  { sourceName? }             -> {}   back to Tile count
+ *   SetBeatSync  { sourceName?, enabled }    -> { beatSync }
+ *   ToggleBeatSync { sourceName? }           -> { beatSync }
+ *
+ * ListGrids items also carry liveCount (tiles on screen), sequenceIndex (-1 when
+ * resting) and beatSync.
  *
  * sourceName may be omitted when the scene collection has exactly one grid.
  */
@@ -67,6 +74,9 @@ static bool enum_grids(void *param, obs_source_t *source)
 		obs_data_set_string(item, "sourceName", obs_source_get_name(source));
 		obs_data_set_string(item, "targetName", obs_data_get_string(settings, S_TARGET));
 		obs_data_set_int(item, "count", obs_data_get_int(settings, S_COUNT));
+		obs_data_set_int(item, "liveCount", yeocam_grid_live_count(source));
+		obs_data_set_int(item, "sequenceIndex", yeocam_grid_sequence_index(source));
+		obs_data_set_bool(item, "beatSync", obs_data_get_bool(settings, S_BEAT_SYNC));
 		obs_data_array_push_back(ctx->list, item);
 		obs_data_release(item);
 		obs_data_release(settings);
@@ -205,6 +215,65 @@ static void req_next_anchor(obs_data_t *request, obs_data_t *response, void *pri
 	ok(response);
 }
 
+static void req_next_layout(obs_data_t *request, obs_data_t *response, void *priv)
+{
+	UNUSED_PARAMETER(priv);
+	obs_source_t *grid = resolve_grid(request, response);
+	if (!grid)
+		return;
+	yeocam_grid_next_layout(grid);
+	obs_source_release(grid);
+	ok(response);
+}
+
+static void req_reset_layout(obs_data_t *request, obs_data_t *response, void *priv)
+{
+	UNUSED_PARAMETER(priv);
+	obs_source_t *grid = resolve_grid(request, response);
+	if (!grid)
+		return;
+	yeocam_grid_reset_layout(grid);
+	obs_source_release(grid);
+	ok(response);
+}
+
+static void req_set_beat_sync(obs_data_t *request, obs_data_t *response, void *priv)
+{
+	UNUSED_PARAMETER(priv);
+	if (!obs_data_has_user_value(request, "enabled")) {
+		fail(response, "Missing enabled.");
+		return;
+	}
+	obs_source_t *grid = resolve_grid(request, response);
+	if (!grid)
+		return;
+	obs_data_set_bool(response, "beatSync", yeocam_grid_set_beat_sync(grid, obs_data_get_bool(request, "enabled")));
+	obs_source_release(grid);
+	ok(response);
+}
+
+static void req_toggle_beat_sync(obs_data_t *request, obs_data_t *response, void *priv)
+{
+	UNUSED_PARAMETER(priv);
+	obs_source_t *grid = resolve_grid(request, response);
+	if (!grid)
+		return;
+	obs_data_set_bool(response, "beatSync", yeocam_grid_toggle_beat_sync(grid));
+	obs_source_release(grid);
+	ok(response);
+}
+
+static const struct {
+	const char *name;
+	obs_websocket_request_callback_function fn;
+} requests[] = {
+	{"ListGrids", req_list},           {"AdjustCount", req_adjust_count},
+	{"SetCount", req_set_count},       {"ToggleFit", req_toggle_fit},
+	{"SetAnchor", req_set_anchor},     {"NextAnchor", req_next_anchor},
+	{"NextLayout", req_next_layout},   {"ResetLayout", req_reset_layout},
+	{"SetBeatSync", req_set_beat_sync}, {"ToggleBeatSync", req_toggle_beat_sync},
+};
+
 void yeocam_websocket_register(void)
 {
 	vendor = obs_websocket_register_vendor("yeocam");
@@ -213,12 +282,8 @@ void yeocam_websocket_register(void)
 		return;
 	}
 
-	obs_websocket_vendor_register_request(vendor, "ListGrids", req_list, NULL);
-	obs_websocket_vendor_register_request(vendor, "AdjustCount", req_adjust_count, NULL);
-	obs_websocket_vendor_register_request(vendor, "SetCount", req_set_count, NULL);
-	obs_websocket_vendor_register_request(vendor, "ToggleFit", req_toggle_fit, NULL);
-	obs_websocket_vendor_register_request(vendor, "SetAnchor", req_set_anchor, NULL);
-	obs_websocket_vendor_register_request(vendor, "NextAnchor", req_next_anchor, NULL);
+	for (size_t i = 0; i < OBS_COUNTOF(requests); i++)
+		obs_websocket_vendor_register_request(vendor, requests[i].name, requests[i].fn, NULL);
 	obs_log(LOG_INFO, "registered obs-websocket vendor 'yeocam'");
 }
 
@@ -226,11 +291,7 @@ void yeocam_websocket_unregister(void)
 {
 	if (!vendor)
 		return;
-	obs_websocket_vendor_unregister_request(vendor, "ListGrids");
-	obs_websocket_vendor_unregister_request(vendor, "AdjustCount");
-	obs_websocket_vendor_unregister_request(vendor, "SetCount");
-	obs_websocket_vendor_unregister_request(vendor, "ToggleFit");
-	obs_websocket_vendor_unregister_request(vendor, "SetAnchor");
-	obs_websocket_vendor_unregister_request(vendor, "NextAnchor");
+	for (size_t i = 0; i < OBS_COUNTOF(requests); i++)
+		obs_websocket_vendor_unregister_request(vendor, requests[i].name);
 	vendor = NULL;
 }

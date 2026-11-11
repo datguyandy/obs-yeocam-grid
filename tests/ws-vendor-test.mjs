@@ -147,13 +147,50 @@ await v('SetCount', { count: 5 });
 const after = await call('GetInputSettings', { inputName: name });
 check('SetInputSettings view agrees (count 5)', after.responseData.inputSettings.count === 5);
 
+// Layout sequence and beat sync. Changes apply on the next frame, so wait a little.
+const origBeatSync = orig.beat_sync ?? false;
+const frame = () => new Promise((r) => setTimeout(r, 200));
+const live = async () => (await v('ListGrids')).grids.find((g) => g.sourceName === name);
+
+r = await v('SetBeatSync', { enabled: false });
+check('SetBeatSync false', r.success && r.beatSync === false, JSON.stringify(r));
+await v('ResetLayout');
+await frame();
+let g = await live();
+check('ListGrids has liveCount/sequenceIndex/beatSync', g && 'liveCount' in g && 'sequenceIndex' in g && 'beatSync' in g,
+  JSON.stringify(g));
+check('Resting: sequenceIndex -1, liveCount = count', g.sequenceIndex === -1 && g.liveCount === 5, JSON.stringify(g));
+
+r = await v('NextLayout');
+await frame();
+g = await live();
+check('NextLayout -> step 0', r.success && g.sequenceIndex === 0, JSON.stringify(g));
+
+await v('NextLayout');
+await frame();
+const step1 = await live();
+check('NextLayout -> step 1', step1.sequenceIndex === 1, JSON.stringify(step1));
+
+await v('ResetLayout');
+await frame();
+g = await live();
+check('ResetLayout -> resting', g.sequenceIndex === -1 && g.liveCount === 5, JSON.stringify(g));
+
+const t1 = await v('ToggleBeatSync');
+const t2 = await v('ToggleBeatSync');
+check('ToggleBeatSync flips and flips back', t1.success && t2.success && t1.beatSync !== t2.beatSync,
+  `${t1.beatSync} -> ${t2.beatSync}`);
+
+r = await v('SetBeatSync', {});
+check('SetBeatSync without enabled fails', r.success === false, r.error);
+
 // Restore.
 await call('SetInputSettings', {
   inputName: name,
-  inputSettings: { count: origCount, fit: origFit, anchor: origAnchor },
+  inputSettings: { count: origCount, fit: origFit, anchor: origAnchor, beat_sync: origBeatSync },
   overlay: true,
 });
-console.log(`\nRestored count ${origCount}, fit ${origFit}, anchor ${origAnchor}.`);
+console.log(`\nRestored count ${origCount}, fit ${origFit}, anchor ${origAnchor}, beat sync ${origBeatSync}.`);
 console.log(failures ? `\n${failures} check(s) failed` : '\nAll vendor request checks passed');
 
 ws.close();

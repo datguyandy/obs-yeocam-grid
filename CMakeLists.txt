@@ -37,7 +37,7 @@ endif()
 
 target_sources(
   ${CMAKE_PROJECT_NAME}
-  PRIVATE src/plugin-main.c src/yeocam-grid.c src/yeocam-layout.c src/yeocam-websocket.c
+  PRIVATE src/plugin-main.c src/yeocam-grid.c src/yeocam-layout.c src/yeocam-beat.c src/yeocam-websocket.c
 )
 
 set_target_properties_plugin(${CMAKE_PROJECT_NAME} PROPERTIES OUTPUT_NAME ${_name})

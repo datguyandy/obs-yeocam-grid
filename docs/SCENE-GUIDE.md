@@ -6,6 +6,7 @@ How to set Yeocam Grid up for a stream, from the simplest setup to fully automat
 - [The idea: one source, many layouts](#the-idea-one-source-many-layouts)
 - [Recommended setup: one scene, change the count](#recommended-setup-one-scene-change-the-count)
 - [Layout presets](#layout-presets)
+- [The gift moment, fully automatic (beat sync)](#the-gift-moment-fully-automatic-beat-sync)
 - [Ways to switch layouts](#ways-to-switch-layouts)
   - [OBS hotkeys](#1-obs-hotkeys)
   - [Stream Deck](#2-stream-deck)
@@ -50,6 +51,42 @@ count, then drop it back to 1.
 > Gap is applied around the outside too. Keep it `0` for the "normal cam" look, and use a
 > preset that sets a gap when you go multi-cam (the presets below do this).
 
+## The gift moment, fully automatic (beat sync)
+
+The classic Yeocam moment: someone gifts, a song plays, and the cam goes 2-cam, 3-cam, 4-cam
+in time with the music before going back to normal. With beat sync the grid does the
+switching itself. All anything else has to do is play the song.
+
+1. **Set up the grid as your camera** ([one-scene setup](#recommended-setup-one-scene-change-the-count)):
+   Tile count `1`, Gap `0`.
+2. **Add the song** to the scene as a **Media Source** (for example "Gift song"), with
+   *Restart playback when source becomes active* on and *Loop* off. Hide it (eye icon).
+   A hidden Media Source is silent, and showing it starts the song from the top.
+3. **In the grid's properties:**
+   - **Layout sequence → Sequence:** the layouts to step through, for example
+     `2x1, 3x1, 2x2, 3x3`. That's 2 side by side, 3 in a row, 2×2, then 3×3, and back round.
+   - **Beat sync:** tick it, set **Music source** to "Gift song".
+   - **Beats per step:** `1` for a change on every kick, `2` or `4` for calmer changes.
+   - **Back to resting layout after silence:** `2000` ms.
+4. **Trigger the song** on a gift by showing "Gift song", from Streamer.bot (set source
+   visibility), a Stream Deck source-visibility button, or an OBS show/hide hotkey. Hide it
+   again afterwards so it's ready for the next gift.
+
+What happens:
+
+```
+gift → song starts → kick: 2 cams → kick: 3 in a row → kick: 2×2 → kick: 3×3 → …
+                     song ends → 2 s of silence → back to 1 cam
+```
+
+No scene switch, no timer to keep in sync with the song length. If the song is cut short,
+the grid notices the silence and resets by itself.
+
+**Using music you already play (Spotify, a DJ deck):** set **Music source** to Desktop
+Audio or an Application Audio Capture of the player instead. Then toggle **Beat sync**
+on and off with the *Toggle beat sync* hotkey (or the `ToggleBeatSync` websocket request), so
+the cam only dances when you want it to.
+
 ## Layout presets
 
 These are ready-made settings. Use them from hotkey-free tools
@@ -80,13 +117,17 @@ on the left of your camera's view), or use **Zoom** to tighten on your face.
 
 | Hotkey | Does |
 |---|---|
+| Next layout in sequence | steps through your **Sequence** (2x1 → 3x1 → 2x2 → …) |
+| Back to resting layout | returns to Tile count |
+| Toggle beat sync | turns beat sync on or off |
 | Add tile | count + 1 |
 | Remove tile | count − 1 |
 | Toggle fill / fit | switches tile fit |
 | Next crop anchor | cycles the 9 anchors |
 
 Simple and needs nothing else. Any keyboard, macro pad or Stream Deck "Hotkey" button can
-press these.
+press these. *Next layout* plus *Back to resting layout* on two buttons gives you manual
+control of the same sequence beat sync uses.
 
 ### 2. Stream Deck
 
@@ -109,8 +150,12 @@ one of these:
 
 ### 3. Streamer.bot: gift → music → grid
 
-The common moment: someone gifts, music plays, the cam goes multi-cam, then back to normal.
-In Streamer.bot this is one action:
+**With beat sync** ([above](#the-gift-moment-fully-automatic-beat-sync)), Streamer.bot only
+needs to play the song: on the gift trigger, **set "Gift song" visible**, **delay** for the
+song's length, then **set it hidden**. The grid handles the layouts and the reset.
+
+**Without beat sync**, or for a fixed layout per gift size, drive the grid directly. In
+Streamer.bot this is one action:
 
 **Trigger:** your platform's gift / gift-bomb / sub event.
 
@@ -165,16 +210,27 @@ Every grid setting is an ordinary source setting, so any obs-websocket client ca
   `fit`, `anchor`, `focus_x`, `focus_y`, `zoom`, `mirror`, `background_color`, `width`,
   `height`. Use `"overlay": true` so you only change what you pass.
 - **Vendor requests** (`CallVendorRequest`, `vendorName: "yeocam"`): `ListGrids`,
-  `AdjustCount`, `SetCount`, `ToggleFit`, `SetAnchor`, `NextAnchor`. See the README for
-  parameters.
+  `AdjustCount`, `SetCount`, `ToggleFit`, `SetAnchor`, `NextAnchor`, `NextLayout`,
+  `ResetLayout`, `SetBeatSync`, `ToggleBeatSync`. See the README for parameters.
 
 [`examples/obs-ws.mjs`](../examples/obs-ws.mjs) is a small, dependency-free Node client you
 can copy.
 
 ## Syncing to music
 
+**Use the built-in beat sync first** ([setup](#the-gift-moment-fully-automatic-beat-sync)).
+It listens to the actual audio, so it follows any song and tempo, and resets when the music
+stops. Tuning tips:
+
+- **Missing kicks?** Raise **Sensitivity** (try 75). **Reacting to snares or vocals?**
+  Lower it (try 45).
+- **Too frantic?** Set **Beats per step** to 2 or 4, or raise the minimum time between beats.
+- **Songs without a kick drum** (acoustic, ballads) won't trigger much. Use the script below
+  or the *Next layout* hotkey for those.
+
+For a fixed tempo instead, for example a song with no clear kick,
 [`examples/beat-party.mjs`](../examples/beat-party.mjs) steps the grid through tile counts on
-the beat:
+a BPM you give it:
 
 ```bash
 node examples/beat-party.mjs --bpm 128
@@ -191,10 +247,10 @@ node examples/beat-party.mjs --bpm 140 --every 2 --sequence 1,2,4,9,16 --loops 4
 - When it finishes (or you press Ctrl+C) it goes back to `--end` (default 1).
 - `--dry-run` prints the timing without touching OBS.
 
-Timing is fixed-tempo, not beat detection: it stays locked to the BPM for the whole song, but
-you need to start it on the beat. Starting the song and the script from the same Streamer.bot
-action is the easiest way to keep them lined up. Built-in audio-reactive beat detection is
-on the roadmap (see the README).
+The script's timing is fixed-tempo: it stays locked to the BPM for the whole song, but you
+need to start it on the beat. Starting the song and the script from the same Streamer.bot
+action is the easiest way to keep them lined up. Turn the grid's beat sync off while the
+script runs, so the two don't fight.
 
 ## The classic way: separate 2-cam / 3-cam scenes
 
