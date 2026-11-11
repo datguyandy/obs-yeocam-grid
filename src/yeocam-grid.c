@@ -91,18 +91,18 @@ struct yeocam_grid {
 	uint32_t steps_taken;
 
 	/* Cross-thread signals. */
-	volatile long beats_pending;  /* audio thread -> graphics thread */
-	volatile long manual_steps;   /* hotkeys / websocket -> graphics thread */
+	volatile long beats_pending; /* audio thread -> graphics thread */
+	volatile long manual_steps;  /* hotkeys / websocket -> graphics thread */
 	volatile bool reset_requested;
-	volatile long last_sound_ms;  /* ms since epoch_ns when the music was last audible */
-	volatile long live_count;     /* what is on screen, for ListGrids */
+	volatile long last_sound_ms; /* ms since epoch_ns when the music was last audible */
+	volatile long live_count;    /* what is on screen, for ListGrids */
 	volatile long live_index;
 	uint64_t epoch_ns;
 
 	/* Beat sync audio. audio_lock serialises attach/detach. */
 	pthread_mutex_t audio_lock;
 	obs_weak_source_t *audio;
-	char *audio_name; /* audio source from settings; guarded by lock */
+	char *audio_name;        /* audio source from settings; guarded by lock */
 	struct yeocam_beat beat; /* audio thread only while attached */
 	volatile long param_sensitivity;
 	volatile long param_min_interval;
@@ -168,8 +168,8 @@ static void set_target_locked(struct yeocam_grid *g, const char *name)
 		obs_source_remove_active_child(g->self, old);
 
 	if (source && !obs_source_add_active_child(g->self, source)) {
-		obs_log(LOG_WARNING, "[%s] '%s' would create a render loop, ignoring it",
-			obs_source_get_name(g->self), name);
+		obs_log(LOG_WARNING, "[%s] '%s' would create a render loop, ignoring it", obs_source_get_name(g->self),
+			name);
 		obs_source_release(source);
 		source = NULL;
 	}
@@ -268,8 +268,7 @@ static bool audio_attached(struct yeocam_grid *g)
 	return source != NULL;
 }
 
-static bool rename_setting(struct yeocam_grid *g, char **stored, const char *key, const char *prev,
-			   const char *next)
+static bool rename_setting(struct yeocam_grid *g, char **stored, const char *key, const char *prev, const char *next)
 {
 	if (!*stored || strcmp(*stored, prev) != 0)
 		return false;
@@ -742,12 +741,13 @@ static void *yeocam_create(obs_data_t *settings, obs_source_t *source)
 	signal_handler_connect(obs_get_signal_handler(), "source_rename", on_source_rename, g);
 
 	g->hk_add = obs_hotkey_register_source(source, "YeocamGrid.AddTile", T("Hotkey.AddTile"), hk_add, g);
-	g->hk_remove = obs_hotkey_register_source(source, "YeocamGrid.RemoveTile", T("Hotkey.RemoveTile"), hk_remove, g);
+	g->hk_remove =
+		obs_hotkey_register_source(source, "YeocamGrid.RemoveTile", T("Hotkey.RemoveTile"), hk_remove, g);
 	g->hk_fit = obs_hotkey_register_source(source, "YeocamGrid.ToggleFit", T("Hotkey.ToggleFit"), hk_fit, g);
 	g->hk_anchor =
 		obs_hotkey_register_source(source, "YeocamGrid.NextAnchor", T("Hotkey.NextAnchor"), hk_anchor, g);
-	g->hk_next_layout = obs_hotkey_register_source(source, "YeocamGrid.NextLayout", T("Hotkey.NextLayout"),
-						       hk_next_layout, g);
+	g->hk_next_layout =
+		obs_hotkey_register_source(source, "YeocamGrid.NextLayout", T("Hotkey.NextLayout"), hk_next_layout, g);
 	g->hk_reset_layout = obs_hotkey_register_source(source, "YeocamGrid.ResetLayout", T("Hotkey.ResetLayout"),
 							hk_reset_layout, g);
 	g->hk_beat_sync = obs_hotkey_register_source(source, "YeocamGrid.ToggleBeatSync", T("Hotkey.ToggleBeatSync"),
@@ -932,8 +932,7 @@ static const enum gs_color_space preferred_spaces[] = {
 	GS_CS_709_EXTENDED,
 };
 
-static enum gs_color_space yeocam_get_color_space(void *data, size_t count,
-						  const enum gs_color_space *preferred)
+static enum gs_color_space yeocam_get_color_space(void *data, size_t count, const enum gs_color_space *preferred)
 {
 	UNUSED_PARAMETER(count);
 	UNUSED_PARAMETER(preferred);

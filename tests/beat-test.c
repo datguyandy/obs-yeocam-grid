@@ -59,8 +59,10 @@ static float sample_at(const struct track *t, uint32_t n)
 		x += t->hat_gain * noise() * expf(-since * 80.0f);
 	}
 	if (t->pad_gain > 0.0f)
-		x += t->pad_gain * (sinf(2.0f * PI * 220.0f * time) + sinf(2.0f * PI * 277.2f * time) +
-				    sinf(2.0f * PI * 329.6f * time)) / 3.0f;
+		x += t->pad_gain *
+		     (sinf(2.0f * PI * 220.0f * time) + sinf(2.0f * PI * 277.2f * time) +
+		      sinf(2.0f * PI * 329.6f * time)) /
+		     3.0f;
 	if (t->noise_gain > 0.0f)
 		x += t->noise_gain * noise();
 	if (t->bass_gain > 0.0f)

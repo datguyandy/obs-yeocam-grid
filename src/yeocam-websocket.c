@@ -267,11 +267,16 @@ static const struct {
 	const char *name;
 	obs_websocket_request_callback_function fn;
 } requests[] = {
-	{"ListGrids", req_list},           {"AdjustCount", req_adjust_count},
-	{"SetCount", req_set_count},       {"ToggleFit", req_toggle_fit},
-	{"SetAnchor", req_set_anchor},     {"NextAnchor", req_next_anchor},
-	{"NextLayout", req_next_layout},   {"ResetLayout", req_reset_layout},
-	{"SetBeatSync", req_set_beat_sync}, {"ToggleBeatSync", req_toggle_beat_sync},
+	{"ListGrids", req_list},
+	{"AdjustCount", req_adjust_count},
+	{"SetCount", req_set_count},
+	{"ToggleFit", req_toggle_fit},
+	{"SetAnchor", req_set_anchor},
+	{"NextAnchor", req_next_anchor},
+	{"NextLayout", req_next_layout},
+	{"ResetLayout", req_reset_layout},
+	{"SetBeatSync", req_set_beat_sync},
+	{"ToggleBeatSync", req_toggle_beat_sync},
 };
 
 void yeocam_websocket_register(void)

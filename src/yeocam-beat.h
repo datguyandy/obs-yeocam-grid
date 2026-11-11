@@ -45,8 +45,8 @@ struct yeocam_beat {
 
 	uint32_t win_size;
 	uint32_t win_frames;
-	float win_bass;  /* sum of bass^2 in the current window */
-	float win_full;  /* sum of full-band^2 in the current window */
+	float win_bass; /* sum of bass^2 in the current window */
+	float win_full; /* sum of full-band^2 in the current window */
 
 	float history[YEOCAM_BEAT_HISTORY];
 	uint32_t history_pos;
