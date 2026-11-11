@@ -27,17 +27,42 @@ with a hotkey, a Stream Deck button or a chat event, without switching scenes.
 
 **Requires OBS Studio 33.0 or newer, Windows 10/11 x64.**
 
+1. Download `yeocam-grid-<version>-windows-x64-installer.exe` from the
+   [Releases](../../releases) page.
+2. Close OBS and run the installer. It asks for administrator rights because it installs for
+   every user on the PC.
+3. Start OBS. **Yeocam Grid** now appears in **Sources → +**.
+
+The installer is not code-signed yet, so Windows SmartScreen may say "Windows protected your PC".
+Click **More info → Run anyway**.
+
+What it does:
+
+- Installs to `C:\ProgramData\obs-studio\plugins\yeocam-grid\`, the OBS 33 location.
+- Removes any old copy from the legacy `Program Files\obs-studio\obs-plugins` folder.
+- Warns you if OBS is older than 33, and waits for you to close OBS if it's running.
+- Upgrades in place: run a newer installer over the top.
+- Uninstalls from **Settings → Apps → Installed apps → Yeocam Grid for OBS Studio**.
+
+Silent install (for scripts): `yeocam-grid-<version>-windows-x64-installer.exe /VERYSILENT /SUPPRESSMSGBOXES`.
+
+<details>
+<summary>Manual install from the zip</summary>
+
 1. Close OBS.
-2. Copy the `yeocam-grid` folder into `C:\ProgramData\obs-studio\plugins\`, so you have:
+2. Copy the `yeocam-grid` folder from the `windows-x64.zip` into `C:\ProgramData\obs-studio\plugins\`, so you have:
 
    ```
    C:\ProgramData\obs-studio\plugins\yeocam-grid\yeocam-grid.dll
    C:\ProgramData\obs-studio\plugins\yeocam-grid\data\...
    ```
 
-3. Start OBS. **Yeocam Grid** now appears in **Sources → +**.
+3. Start OBS. To uninstall, delete that folder.
 
-To uninstall, delete that folder. To build it yourself, see [Building](#building).
+</details>
+
+macOS (`.pkg`) and Ubuntu (`.deb`) packages are built too, but haven't been tested in OBS on
+those systems yet. To build it yourself, see [Building](#building).
 
 ## Quick start
 
@@ -190,6 +215,18 @@ The first configure downloads the OBS 33.0.1 sources and prebuilt dependencies a
 libobs, which takes a few minutes. The plugin ends up in `release\yeocam-grid\`, laid out for
 `C:\ProgramData\obs-studio\plugins\`. Pass `-DENABLE_BUILD_LEGACY=ON` to also produce an
 old-layout copy for OBS 32 and earlier.
+
+To build the Windows installer, install [Inno Setup 6](https://jrsoftware.org/isinfo.php)
+(`winget install JRSoftware.InnoSetup`). After the install step above, run:
+
+```bash
+ISCC /DVersion=0.2.1 .github\scripts\installer-windows.iss
+```
+
+It packages `release\yeocam-grid\` into `release\yeocam-grid-0.2.1-windows-x64-installer.exe`.
+
+CI does this automatically (`.github/scripts/Package-Windows.ps1`) and attaches the installer to
+tagged releases.
 
 Unit tests for the layout maths and the beat detector (from a Visual Studio Developer prompt):
 

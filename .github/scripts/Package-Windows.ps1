@@ -26,6 +26,33 @@ if ( $PSVersionTable.PSVersion -lt '7.2.0' ) {
     exit 2
 }
 
+function Find-InnoSetup {
+    $Candidates = @(
+        (Get-Command -Name ISCC.exe -ErrorAction SilentlyContinue).Source
+        "${env:ProgramFiles(x86)}/Inno Setup 6/ISCC.exe"
+        "${env:ProgramFiles}/Inno Setup 6/ISCC.exe"
+        "${env:LOCALAPPDATA}/Programs/Inno Setup 6/ISCC.exe"
+    )
+
+    foreach ( $Candidate in $Candidates ) {
+        if ( $Candidate -and ( Test-Path -Path $Candidate -PathType Leaf ) ) {
+            return $Candidate
+        }
+    }
+
+    Log-Information 'Installing Inno Setup...'
+    choco install innosetup --yes --no-progress | Out-Host
+    if ( $LASTEXITCODE -ne 0 ) {
+        throw 'Could not install Inno Setup.'
+    }
+
+    $Installed = "${env:ProgramFiles(x86)}/Inno Setup 6/ISCC.exe"
+    if ( ! ( Test-Path -Path $Installed -PathType Leaf ) ) {
+        throw 'Inno Setup was installed, but ISCC.exe was not found.'
+    }
+    return $Installed
+}
+
 function Package {
     trap {
         Write-Error $_
@@ -55,6 +82,7 @@ function Package {
         ErrorAction = 'SilentlyContinue'
         Path = @(
             "${ProjectRoot}/release/${ProductName}-*-windows-*.zip"
+            "${ProjectRoot}/release/${ProductName}-*-windows-*.exe"
         )
     }
 
@@ -70,7 +98,26 @@ function Package {
     Compress-Archive -Force @CompressArgs
     Log-Group
 
-    $LegacyPath = "${ProjectRoot}/release/${Configuration}/${ProductName}_legacy"
+    Log-Group "Building ${ProductName} installer..."
+    $Iscc = Find-InnoSetup
+    $IsccArgs = @(
+        '/Q'
+        "/DPluginName=${ProductName}"
+        "/DDisplayName=$($BuildSpec.displayName)"
+        "/DVersion=${ProductVersion}"
+        "/DPublisher=$($BuildSpec.author)"
+        "/DSourceDir=${ProjectRoot}/release/${Configuration}/${ProductName}"
+        "/DOutputDir=${ProjectRoot}/release"
+        "/DOutputName=${OutputName}-installer"
+        "${ScriptHome}/installer-windows.iss"
+    )
+    & $Iscc @IsccArgs
+    if ( $LASTEXITCODE -ne 0 ) {
+        throw "Inno Setup failed with exit code ${LASTEXITCODE}."
+    }
+    Log-Group
+
+    $LegacyPath ="${ProjectRoot}/release/${Configuration}/${ProductName}_legacy"
 
     $PortableLegacyPath = "${ProjectRoot}/release/${Configuration}/${ProductName}_portable_legacy"
 
